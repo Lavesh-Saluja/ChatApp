@@ -1,53 +1,40 @@
-const amqp = require('amqplib');
+const amqp = require('amqplib/callback_api');
 
-async function readMessage(queueName) {
-  const connection = await amqp.connect(process.env.RABBITMQ_URL);
-  const channel = await connection.createChannel();
+function readMessage(queueName) {
+  return new Promise((resolve, reject) => {
+    amqp.connect(`${process.env.RABBITMQ_URL}`, (err, connection) => {
+      if (err)
+        reject(err);
 
-  // Ensure the queue exists, and create it if not
-  await channel.assertQueue(queueName);
-  console.log("Queue", queueName);
-  const queueInfo = await channel.checkQueue(queueName);
-  let remainingMessages = queueInfo.messageCount;
-    if(remainingMessages==0){
-        return [];
-    }
-  const messages = [];
+      const messages = [];
 
-  // Wrap the consume operation in a promise
-  const consumePromise = new Promise((resolve) => {
-    // Consume messages from the queue
-    channel.consume(queueName, (message) => {
-      if (message !== null) {
-        // Store the message in the array
-        messages.push(message.content.toString());
-        console.log(`Received message: ${message.content.toString()}`);
+      connection.createChannel((err, channel) => {
+        if (err)
+          reject(err);
 
-        // Acknowledge the message to remove it from the queue
-        channel.ack(message);
+        let qName = queueName + "";
+        console.log("Queue Name:", qName);
 
-        // Decrease the remaining message count
-        remainingMessages--;
+        channel.assertQueue(qName, {
+          durable: true
+        });
 
-        // Check if all messages are consumed
-        if (remainingMessages === 0) {
-          // Resolve the promise to indicate completion
-          resolve();
-        }
-      }
+        channel.consume(qName, (msg) => {
+          if (msg !== null) {
+            messages.push(msg.content.toString());
+            console.log(`Received:${msg.content.toString()}`);
+            channel.ack(msg);
+          }
+        }, { noAck: false }); // Ensure that message acknowledgments are enabled
+
+        // Close the connection after a delay and resolve the Promise with the messages array
+        setTimeout(() => {
+          connection.close();
+          resolve(messages);
+        }, 500);
+      });
     });
   });
-
-  // Wait for the consumePromise to complete
-  await consumePromise;
-
-  // Close the channel and connection
-  await channel.close();
-  await connection.close();
-
-  // Return the array of messages
-  console.log("Messages", messages);
-  return messages;
 }
 
 module.exports = readMessage;

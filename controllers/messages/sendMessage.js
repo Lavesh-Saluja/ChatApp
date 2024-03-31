@@ -12,7 +12,7 @@ const sendMessage = async (req, res) => {
     try {
         const { message, receiver } = req.body;
         const id = uuidv4(); 
-                const msg=messageSchema(id,message,req.rootUser.phoneNumber,receiver,Date.now());
+                const msg=messageSchema(id,message,req.rootUser.phoneNumber+"",receiver,Date.now());
          console.log("Send Message", message, receiver);
         const user = await User.findOne({ phoneNumber: receiver });
         // console.log("User", user);
@@ -24,7 +24,7 @@ const sendMessage = async (req, res) => {
         console.log("wsObject", wsObject);
         const ws = wsObject.clients.get(receiver);
     const response = await wsObject.sendMessage(msg, ws, receiver);
-        return res.status(200).json({ success:response, message: "Message sent" });
+        return res.status(200).json(msg);
     }
     catch (e) {
                 console.log("Error",e);

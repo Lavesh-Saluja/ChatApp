@@ -7,7 +7,7 @@ const sendOtp = async (phoneNumber, otp) => {
     const msg = await client.messages
         .create({
             body: `Your OTP for login is ${otp} \n Please do not share it with anyone `,
-            from: '+12058609168',
+            from: '+19147210633',
             to: `+91${phoneNumber}`
         });
     console.log(msg.sid);

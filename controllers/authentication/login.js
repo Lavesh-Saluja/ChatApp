@@ -21,7 +21,7 @@ const otp = async (req, res) => {
         userExist.otpExpiration = otpExpiration;
         await userExist.save();
         //send otp using twillo or any other service
-        // await sendOtp(phoneNumber, otp);
+        await sendOtp(phoneNumber, otp);
         res.status(201).json({ message: "Otp sent Successfully" });
     } catch (err) {
         console.log(err);
@@ -49,7 +49,7 @@ const verifyOtp = async (req, res) => {
         //  res.setHeader('Set-Cookie', `token=${token}; Path=/; Expires=Thu, 31 Dec 9999 23:59:59 GMT;`);
         res.cookie("token", token, {
             expires: new Date('9999-12-31T23:59:59Z'),
-            // httpOnly: true,
+            httpOnly: true,
             // signed:true
             sameSite:"none",
             secure: true,

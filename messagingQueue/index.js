@@ -1,18 +1,21 @@
 const amqp = require('amqplib');
 
 //publisher
-const connect = async (message,phoneNumber) => {
+const connect = async (message, phoneNumber) => {
+    let connection;
     try {
-        const connection = await amqp.connect(process.env.RABBITMQ_URL);
+         connection = await amqp.connect(process.env.RABBITMQ_URL);
         const channel = await connection.createChannel();
-        const result = await channel.assertQueue(phoneNumber+"");
+        await channel.assertQueue(phoneNumber + "", {
+             durable:true
+         });
         console.log("Message",JSON.stringify({message,phoneNumber}));
-        channel.sendToQueue(phoneNumber, Buffer.from(JSON.stringify({message})));
+        channel.sendToQueue(phoneNumber + "", Buffer.from(JSON.stringify({ message })), {
+            persistent:false     
+        });
         console.log("Message enqueued successfully");
-
-        
-        
     } catch (error) {
+        
         console.log(error);
     }
 }
